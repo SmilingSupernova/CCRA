@@ -6,7 +6,7 @@ processedImage1 = "sampleImage1.png"
 processedImage2 = "/workspaces/blank-app/sampleImage1_annotated.jpg"
 
 st.set_page_config(layout="wide") 
-st.title("Object Detection Model")
+st.title("LLM Legal Risk Analysis Model")
 st.divider()
 
 # Create two columns for the "Drag and Drop" vs "Output" look
