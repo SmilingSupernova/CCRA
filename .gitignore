@@ -1,0 +1,36 @@
+# Ignore all data and large files
+*.csv
+*.json
+*.xlsx
+*.zip
+backend/data/
+backend/.env
+
+# OS generated files
+.DS_Store
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+venv/
+.venv/
+.ipynb_checkpoints/
+
+# Node modules
+node_modules/
