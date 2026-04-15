@@ -14,9 +14,8 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("Input")
-    uploaded_file = st.file_uploader("Upload a legal document here...", type=["jpg", "png", "jpeg"])
-    st.info("Please drag and drop or upload a file to start.")
+    st.text_area("Enter your legal document here", height=500)
 
 with col2:
     st.subheader("Model Output")
-    st.write("Results will appear here.")
+    st.text_area("Results will appear here", height=500)
