@@ -2,6 +2,15 @@ import { useState } from "react";
 
 const API = "http://localhost:8000";
 
+// normalize the response so the UI always sees { summary, clauses }
+function normalize(data) {
+  if (Array.isArray(data)) return { summary: null, clauses: data };
+  return {
+    summary: data?.summary ?? null,
+    clauses: data?.clauses ?? [],
+  };
+}
+
 export function useContractAnalysis() {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -19,7 +28,7 @@ export function useContractAnalysis() {
         body: JSON.stringify({ contract_text: text }),
       });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
-      setResults(await res.json());
+      setResults(normalize(await res.json()));
     } catch (err) {
       setError(err.message || "Could not reach the backend.");
     } finally {
@@ -43,7 +52,7 @@ export function useContractAnalysis() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.detail || `Server error: ${res.status}`);
       }
-      setResults(await res.json());
+      setResults(normalize(await res.json()));
     } catch (err) {
       setError(err.message || "Could not reach the backend.");
     } finally {

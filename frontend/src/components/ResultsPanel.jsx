@@ -20,10 +20,11 @@ export default function ResultsPanel({ loading, error, results, onDownload }) {
   }
 
   if (results) {
+    const clauses = results.clauses || [];
     return (
       <div className="space-y-4">
-        <Summary clauses={results} onDownload={onDownload} />
-        {results.map((clause, i) => (
+        <Summary clauses={clauses} onDownload={onDownload} />
+        {clauses.map((clause, i) => (
           <ClauseCard key={i} clause={clause} />
         ))}
       </div>

@@ -179,3 +179,48 @@ Rules:
     except Exception as e:
         print("Error during explanation:", e)
         return None
+
+
+# sends the analyzed clauses to GPT and returns a short contract-level summary
+def summarize_contract(analyzed_clauses):
+    system_message = """You are an expert legal analyst who summarizes commercial contracts for non-lawyers. You are given a list of clauses that have already been classified and risk-rated. Write a short plain-English summary of the contract as a whole.
+
+Cover these points:
+What kind of contract this is and who the parties appear to be (infer from the clause content).
+The most important commercial terms (term length, fees if mentioned, key obligations).
+The overall risk profile. Call out high-risk areas if there are any, or note that the contract is fairly balanced if there aren't.
+
+Rules:
+- Write 3 to 5 sentences total.
+- Do not use the words "Low", "Medium", or "High" verbatim. Describe risk in your own words.
+- Write for a non-lawyer in plain English.
+- Respond with only the summary text. No headings, labels, or preambles."""
+
+    # build a compact view of the contract: category, risk, and a short snippet per clause
+    lines = []
+    for clause in analyzed_clauses:
+        snippet = clause["text"].strip().replace("\n", " ")
+        if len(snippet) > 150:
+            snippet = snippet[:150] + "..."
+        lines.append(
+            str(clause["clause_number"]) + ". [" + clause["category"] +
+            " | Risk: " + clause["risk"] + "] " + snippet
+        )
+
+    user_message = "Analyzed clauses:\n" + "\n".join(lines)
+
+    try:
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.5
+        )
+        summary = response.choices[0].message.content.strip()
+        return summary
+
+    except Exception as e:
+        print("Error during contract summary:", e)
+        return None

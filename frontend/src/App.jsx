@@ -1,6 +1,7 @@
 import ContractInput from "./components/ContractInput";
 import Header from "./components/Header";
 import ResultsPanel from "./components/ResultsPanel";
+import SummaryCard from "./components/SummaryCard";
 import { useContractAnalysis } from "./hooks/useContractAnalysis";
 
 export default function App() {
@@ -30,12 +31,17 @@ export default function App() {
     <div className="min-h-screen bg-slate-100 text-slate-900">
       <Header />
       <main className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-6 py-8 lg:grid-cols-2">
-        <ContractInput
-          loading={loading}
-          onAnalyzeText={analyzeText}
-          onAnalyzeFile={analyzeFile}
-          onInvalidFile={setUploadError}
-        />
+        <div className="space-y-6">
+          <ContractInput
+            loading={loading}
+            onAnalyzeText={analyzeText}
+            onAnalyzeFile={analyzeFile}
+            onInvalidFile={setUploadError}
+          />
+          {!loading && results?.summary && (
+            <SummaryCard summary={results.summary} />
+          )}
+        </div>
         <section>
           <ResultsPanel
             loading={loading}

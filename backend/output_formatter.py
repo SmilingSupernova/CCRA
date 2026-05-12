@@ -31,6 +31,14 @@ def format_all_clauses(clauses):
     return output
 
 
-# converts the final list into a JSON string to send to the frontend
-def to_json(formatted_clauses):
-    return json.dumps(formatted_clauses, indent=4)
+# bundles the contract-level summary together with the list of clauses
+def format_final_output(summary, clauses):
+    return {
+        "summary": summary,
+        "clauses": clauses,
+    }
+
+
+# converts the final output into a JSON string to send to the frontend
+def to_json(formatted_output):
+    return json.dumps(formatted_output, indent=4)

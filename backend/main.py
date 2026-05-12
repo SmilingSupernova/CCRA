@@ -17,8 +17,8 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 
 from preprocessor import get_clauses
-from gpt_api_calls import classify_clause, assess_risk, explain_clause
-from output_formatter import format_clause, format_all_clauses
+from gpt_api_calls import classify_clause, assess_risk, explain_clause, summarize_contract
+from output_formatter import format_clause, format_all_clauses, format_final_output
 from entities_and_phrases import extract_entities, extract_keyphrases, parse_preamble
 from file_reader import extract_text
 
@@ -116,8 +116,15 @@ def run_analysis(contract_text):
 
         all_formatted_clauses.append(formatted)
 
+    # generate a contract-level summary based on the analyzed clauses
+    print("Generating contract summary...")
+    summary = summarize_contract(all_formatted_clauses)
+    if summary is None:
+        print("Summary generation failed, using fallback.")
+        summary = "Summary unavailable."
+
     print("Analysis complete. Returning results.")
-    return format_all_clauses(all_formatted_clauses)
+    return format_final_output(summary, format_all_clauses(all_formatted_clauses))
 
 
 @app.post("/analyze")
