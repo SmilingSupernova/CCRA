@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 from preprocessor import get_clauses
 from gpt_api_calls import classify_clause, assess_risk, explain_clause
 from output_formatter import format_clause, format_all_clauses
-from entities_and_phrases import extract_entities, extract_keyphrases
+from entities_and_phrases import extract_entities, extract_keyphrases, parse_preamble
 from file_reader import extract_text
 
 # load the OpenAI API key from the .env file
@@ -63,6 +63,10 @@ def run_analysis(contract_text):
 
     print(f"Found {len(clauses)} clauses. Starting analysis...")
 
+    # pull party names and defined terms from the preamble once so we can feed
+    # them to the NER step for every clause
+    known_parties, defined_terms = parse_preamble(contract_text)
+
     # this will hold the formatted result for each clause
     all_formatted_clauses = []
 
@@ -94,7 +98,7 @@ def run_analysis(contract_text):
             explanation = "No explanation available."
 
         # extract named entities from the clause using spaCy
-        entities = extract_entities(clause_text)
+        entities = extract_entities(clause_text, known_parties, defined_terms)
 
         # extract the most legally significant keyphrases using YAKE
         keyphrases = extract_keyphrases(clause_text)

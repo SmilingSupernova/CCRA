@@ -6,6 +6,8 @@ extract keyphrases: YAKE keyphrases, with legal boilerplate filtered out
 import spacy
 import yake
 
+from preprocessor import line_is_a_numbered_section
+
 nlp = spacy.load("en_core_web_sm")
 
 # spaCy entity labels we keep, mapped to the friendly name we show in the UI
@@ -42,12 +44,93 @@ STOPWORDS = {
 
 yake_extractor = yake.KeywordExtractor(lan="en", n=3, dedupLim=0.7, top=5)
 
+# common written-out numbers that spaCy sometimes flags as entities
+NUMBER_WORDS = {
+    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+    "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
+    "seventeen", "eighteen", "nineteen", "twenty", "thirty", "forty", "fifty",
+    "sixty", "seventy", "eighty", "ninety", "hundred", "thousand",
+    "twenty-one", "twenty-two", "twenty-three", "twenty-four", "twenty-five",
+    "twenty-six", "twenty-seven", "twenty-eight", "twenty-nine",
+    "thirty-one", "thirty-six", "forty-five", "sixty-five", "ninety-nine",
+}
+
+# prefixes that signal a cross-reference rather than a real entity
+XREF_PREFIXES = ("section ", "schedule ", "exhibit ", "article ", "paragraph ")
+
+
+# Walks the contract's preamble and pulls out the parties and defined terms
+def parse_preamble(contract_text):
+    known_parties = set()
+    defined_terms = set()
+
+    # find where the first numbered section starts so we only scan the preamble
+    lines = contract_text.splitlines()
+    cutoff_char = None
+    running = 0
+    for line in lines:
+        if line_is_a_numbered_section(line.strip()):
+            cutoff_char = running
+            break
+        running += len(line) + 1  # +1 for the newline we split on
+
+    if cutoff_char is None or cutoff_char == 0:
+        preamble = contract_text[:1500]
+    else:
+        preamble = contract_text[:cutoff_char]
+
+    # find every ("Something") chunk. quotes can be straight or curly.
+    quote_pairs = [('("', '")'), ("('", "')"), ('(“', '”)')]
+
+    for opener, closer in quote_pairs:
+        pos = 0
+        while True:
+            start = preamble.find(opener, pos)
+            if start == -1:
+                break
+            end = preamble.find(closer, start + len(opener))
+            if end == -1:
+                break
+
+            term = preamble[start + len(opener):end].strip()
+            if term:
+                defined_terms.add(term.lower())
+
+            # walk backwards from the opening paren to grab the company name
+            before = preamble[:start].rstrip()
+            words = before.split()
+            party_words = []
+            for w in reversed(words):
+                clean = w.rstrip(",;:.")
+                if not clean:
+                    break
+                if clean[0].isupper() or clean.lower() in {"and", "of", "&"}:
+                    party_words.insert(0, clean)
+                else:
+                    break
+
+            # trim leading connector words like "and" or "of"
+            while party_words and party_words[0].lower() in {"and", "of", "&"}:
+                party_words.pop(0)
+
+            if party_words:
+                known_parties.add(" ".join(party_words).lower())
+
+            pos = end + len(closer)
+
+    return known_parties, defined_terms
+
+
 # Returns a list of {"text", "type"} dicts for the entities found in a clause.
-def extract_entities(clause_text):
+# known_parties and defined_terms come from parse_preamble and are used to
+# correct spaCy's mistakes on contract-specific names.
+def extract_entities(clause_text, known_parties=None, defined_terms=None):
+    known_parties = known_parties or set()
+    defined_terms = defined_terms or set()
+
     # a lot of clauses starts with something like "5. Termination. ..."
     # if spaCy sees that, it picks up the heading word ("Termination") as an
     # entity which is not what we want. so we cut that part off first before sending the text to spaCy.
-
     body = clause_text.lstrip()
     first_dot = body.find(". ")
     if 0 < first_dot <= 3:
@@ -107,6 +190,41 @@ def extract_entities(clause_text):
         if not key or key in BLOCKLIST or key in seen:
             continue
 
+        # drop written-out numbers like "eighteen" or "twenty-four"
+        if " " not in key and key in NUMBER_WORDS:
+            continue
+
+        # drop cross-references like "section 4" or "exhibit b"
+        is_xref = False
+        for prefix in XREF_PREFIXES:
+            if key.startswith(prefix):
+                rest = key[len(prefix):].split()
+                if rest:
+                    tok = rest[0].rstrip(".,;:)")
+                    if tok.isdigit() or (len(tok) == 1 and tok.isalpha()):
+                        is_xref = True
+                        break
+        if is_xref:
+            continue
+
+        # if this entity matches a known party (or is part of one), it's
+        # definitely an organization no matter what spaCy guessed
+        forced_org = False
+        for party in known_parties:
+            if key == party or (key and key in party.split()):
+                forced_org = True
+                break
+        if not forced_org:
+            for party in known_parties:
+                if key in party:
+                    forced_org = True
+                    break
+
+        # otherwise, defined terms like "Platform" or "Effective Date" are
+        # contract jargon, not real-world entities
+        if not forced_org and key in defined_terms:
+            continue
+
         # spaCy might get confused on phrases like "State of Delaware"
         # it tags them as ORG when they are a location, rather than throwing them away, label them to location.
         friendly_type = ENTITY_TYPES[ent.label_]
@@ -116,6 +234,9 @@ def extract_entities(clause_text):
             or key.startswith("district of ")
         ):
             friendly_type = "Location"
+
+        if forced_org:
+            friendly_type = "Organization"
 
         seen.add(key)
         # keep the original name but use the cleaned-up type
