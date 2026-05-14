@@ -1,5 +1,5 @@
 """
-Handles all 3 api calls to GPT-4o-mini for each clause in the contract
+Handles all 4 api calls to GPT-4o-mini
 """
 
 import os

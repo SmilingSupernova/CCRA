@@ -3,6 +3,8 @@ extract entities: spaCy NER, filtered down to things that matter in a contract
 extract keyphrases: YAKE keyphrases, with legal boilerplate filtered out
 """
 
+import re
+
 import spacy
 import yake
 
@@ -33,7 +35,36 @@ BLOCKLIST = {
     "change of control", "source code escrow",
     "exhibit a", "exhibit b", "schedule a", "work order",
     "confidential information",
+    # generic defined-term jargon
+    "licensed software", "licensed territory", "license term", "license",
+    "third party", "proprietary information", "intellectual property",
+    "products", "product", "deliverables", "work product",
+    "specifications", "documentation",
 }
+
+# product-name suffixes that almost always indicate a mislabeled product
+PRODUCT_SUFFIXES = {
+    "software", "system", "platform", "service", "services",
+    "product", "application",
+}
+
+# DATE entities that are really just cadence adjectives
+DATE_BLOCKLIST = {
+    "annual", "monthly", "weekly", "daily", "quarterly", "yearly",
+    "biennial", "semi-annual", "semi-annually",
+}
+
+# address-fragment tokens spaCy often mistags as a Person
+ADDRESS_WORDS = {
+    "suite", "phd", "ph.d", "dr", "drive", "street", "avenue", "blvd",
+    "boulevard", "road", "rd", "floor", "fl", "apt", "unit", "ave", "st",
+}
+ADDRESS_PREFIXES = ("suite ", "apt ", "unit ", "floor ", "fl ")
+
+INDUSTRY_SUFFIXES = (" industry", " sector", " market", " marketplace")
+
+# matches "1.2.", "10.5", "2.5.Licensee" — a sub-section number glued to text
+SUBSECTION_PREFIX_RE = re.compile(r"^\d+\.\d+\.?")
 
 # Boilerplate words that YAKE picks up but that aren't useful as keyphrases
 STOPWORDS = {
@@ -145,6 +176,9 @@ def extract_entities(clause_text, known_parties=None, defined_terms=None):
                 if heading and heading[0].isupper() and len(heading) <= 50:
                     body = body[second_dot + 2:]
 
+    # also strip sub-section numbers glued to the first word (e.g. "2.5.Licensee")
+    body = SUBSECTION_PREFIX_RE.sub("", body.lstrip(), count=1)
+
     # running spaCy on cleaned body
     doc = nlp(body)
 
@@ -188,6 +222,33 @@ def extract_entities(clause_text, known_parties=None, defined_terms=None):
 
         # drop if its empty, blocklisted, or already seen in this clause
         if not key or key in BLOCKLIST or key in seen:
+            continue
+
+        # drop garbage fragments: too short or no vowels (e.g. "fon", "xy")
+        if len(key) < 3 or not any(ch in "aeiou" for ch in key):
+            continue
+
+        # drop mislabeled product names like "K9 Store Software"
+        last_word = key.rsplit(" ", 1)[-1] if " " in key else key
+        if last_word in PRODUCT_SUFFIXES and " " in key:
+            continue
+
+        # drop DATE entities that are really cadence adjectives ("annual")
+        if ent.label_ == "DATE" and key in DATE_BLOCKLIST:
+            continue
+
+        # drop address fragments mistagged as Person ("Suite", "W. Wacker")
+        if key in ADDRESS_WORDS:
+            continue
+        if any(key.startswith(p) for p in ADDRESS_PREFIXES):
+            continue
+        key_words = key.split()
+        if len(key_words) == 2 and len(key_words[0]) == 2 and key_words[0].endswith("."):
+            if key_words[0][0].isalpha():
+                continue
+
+        # drop general industry references like "the cannabis industry"
+        if any(key.endswith(suf) for suf in INDUSTRY_SUFFIXES):
             continue
 
         # drop written-out numbers like "eighteen" or "twenty-four"

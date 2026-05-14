@@ -30,6 +30,31 @@ def line_is_a_numbered_section(line):
 
     first_word = parts[0]
 
+    # sub-section style: "1.1", "1.1.", "1.10.", "2.3.5", "2.5.Licensee"
+    # taking the leading run of digits and periods only
+    header_part = ""
+    for ch in first_word:
+        if ch.isdigit() or ch == ".":
+            header_part += ch
+        else:
+            break
+    if header_part.endswith("."):
+        header_part = header_part[:-1]
+    if "." in header_part:
+        segments = header_part.split(".")
+        if len(segments) >= 2 and all(s.isdigit() and s for s in segments):
+            return True
+
+    # single-level numbered style with attached text: "1.Status", "15.Counterparts"
+    leading_digits = ""
+    for ch in first_word:
+        if ch.isdigit():
+            leading_digits += ch
+        else:
+            break
+    if leading_digits and len(first_word) > len(leading_digits) and first_word[len(leading_digits)] == ".":
+        return True
+
     # numeric style
     if first_word[:-1].isdigit() and first_word.endswith("."):
         return True
@@ -45,14 +70,69 @@ def line_is_a_numbered_section(line):
     return False
 
 
+def line_is_an_article_header(line):
+    # detects "ARTICLE 1", "Article 2.", "ARTICLE II.", etc
+    parts = line.split()
+    if len(parts) < 2:
+        return False
+
+    if parts[0].upper() != "ARTICLE":
+        return False
+
+    marker = parts[1].rstrip(".")
+    if not marker:
+        return False
+
+    if marker.isdigit():
+        return True
+
+    roman_chars = set("IVXLCDM")
+    if all(ch in roman_chars for ch in marker.upper()):
+        return True
+
+    return False
+
+
+def insert_newlines_before_subsections(text):
+    result = []
+    i = 0
+    n = len(text)
+    while i < n:
+        ch = text[i]
+        # only consider a digit as a possible marker start
+        if ch.isdigit() and i > 0:
+            prev = text[i - 1]
+            if prev.isspace() or prev == ".":
+                # scannign forward: more digits, then a period, then a digit or uppercase letter.
+                # digit-after-period matches sub-sections like "1.1"; uppercase-after-period
+                # matches single-level headers like "1.Status" while skipping dates and dollar amounts.
+
+                j = i
+                while j < n and text[j].isdigit():
+                    j += 1
+                if j < n and text[j] == "." and j + 1 < n:
+                    follow = text[j + 1]
+                    if follow.isdigit() or (follow.isalpha() and follow.isupper()):
+                        # only insert if we're not already at a line start
+                        if prev != "\n":
+                            result.append("\n")
+        result.append(ch)
+        i += 1
+    return "".join(result)
+
+
 def split_by_numbered_sections(contract_text):
+    contract_text = insert_newlines_before_subsections(contract_text)
     lines = contract_text.splitlines()
 
-    # count numbered section headers and remember where the first one starts
+    # count section headers and remember where the first one starts.
+    # article headers count for finding the preamble cutoff but won't be used
+
     numbered_line_count = 0
     first_section_index = None
     for i, line in enumerate(lines):
-        if line_is_a_numbered_section(line.strip()):
+        stripped = line.strip()
+        if line_is_a_numbered_section(stripped) or line_is_an_article_header(stripped):
             numbered_line_count += 1
             if first_section_index is None:
                 first_section_index = i
@@ -60,7 +140,7 @@ def split_by_numbered_sections(contract_text):
     if numbered_line_count < 2:
         return None
 
-    # drop any preamble (title, parties, recitals) before the first numbered section
+    # drop any preamble before the first numbered section
     lines = lines[first_section_index:]
 
     # grouping lines into clauses, starting a new clause at each numbered line
