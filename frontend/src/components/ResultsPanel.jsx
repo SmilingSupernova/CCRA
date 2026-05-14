@@ -1,7 +1,7 @@
 import ClauseCard from "./ClauseCard";
 import MessagePanel from "./MessagePanel";
-import Spinner from "./Spinner";
 import Summary from "./Summary";
+import Spinner from "./Spinner";
 
 function LoadingPanel() {
   return (
