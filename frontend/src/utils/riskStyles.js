@@ -6,6 +6,7 @@ const riskStyles = {
     explanation: "bg-rose-50/70 border border-rose-100 text-rose-900",
     explanationLabel: "text-rose-700",
   },
+
   Medium: {
     badge: "bg-amber-50 text-amber-700 border-amber-200",
     dot: "bg-amber-500",
@@ -13,6 +14,7 @@ const riskStyles = {
     explanation: "bg-amber-50/70 border border-amber-100 text-amber-900",
     explanationLabel: "text-amber-700",
   },
+
   Low: {
     badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
     dot: "bg-emerald-500",
