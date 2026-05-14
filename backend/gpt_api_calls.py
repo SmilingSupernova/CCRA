@@ -10,9 +10,7 @@ openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 # sends the clause to GPT and returns a CUAD category
 def classify_clause(clause_text):
-    system_message =
-    """
-    You are an expert legal analyst who reviews commercial contracts. Classify a single contract clause into one of the CUAD categories listed below.
+    system_message = """You are an expert legal analyst who reviews commercial contracts. Classify a single contract clause into one of the CUAD categories listed below.
 Read the clause carefully and decide which category best describes what the clause is doing. Focus on the clause's primary purpose, not on incidental words it may contain.
 
 Respond with ONLY the category name, exactly as written in this list, and nothing else:
