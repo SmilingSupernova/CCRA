@@ -1,14 +1,15 @@
 """
 This is the main file that runs the FastAPI server and ties everything together.
 
-The pipeline for each clause goes like this:
-    1. Preprocessor splits the raw contract into individual clauses
-    2. GPT classifies the clause into a CUAD category (API call 1)
-    3. GPT assesses the risk level based on the clause wording (API call 2)
-    4. GPT generates a plain-English explanation of the clause (API call 3)
-    5. spaCy extracts named entities from the clause (runs locally, no API call)
-    6. YAKE extracts the most important legal keyphrases (runs locally, no API call)
-    7. Everything gets bundled into a JSON object and returned to the frontend
+The pipeline for each clause is:
+1. Preprocessor splits the raw contract into individual clauses
+2. GPT classifies the clause into a CUAD category
+3. GPT assesses the risk level based on the clause wording
+4. GPT generates a plain-English explanation of the clause
+5. spaCy extracts named entities from the clause
+6. YAKE extracts the most important legal keyphrases
+7. One more GPT call is used to generate the summary of the entire contract.
+7. Everything gets bundled into a JSON object and returned to the frontend
 """
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
@@ -41,7 +42,7 @@ class ContractRequest(BaseModel):
     contract_text: str
 
 
-# simple health check so you can confirm the server is running
+# simple health check to confirm the server is running
 @app.get("/")
 def health_check():
     return {"status": "server is running"}
