@@ -23,15 +23,16 @@ def clean_and_filter(raw_clauses):
 
 
 def line_is_a_numbered_section(line):
-    # checks if a line starts with something like 1. or 3. or 16. etc
+    # checks if a line starts with something like 1. or 3. , 16. etc
     parts = line.split()
     if len(parts) == 0:
         return False
 
     first_word = parts[0]
 
-    # sub-section style: "1.1", "1.1.", "1.10.", "2.3.5", "2.5.Licensee"
+    # sub-section style: "1.1", "1.10.", "2.3.5", etc
     # taking the leading run of digits and periods only
+    #
     header_part = ""
     for ch in first_word:
         if ch.isdigit() or ch == ".":
@@ -45,7 +46,7 @@ def line_is_a_numbered_section(line):
         if len(segments) >= 2 and all(s.isdigit() and s for s in segments):
             return True
 
-    # single-level numbered style with attached text: "1.Status", "15.Counterparts"
+    # single-level numbered style with attached text
     leading_digits = ""
     for ch in first_word:
         if ch.isdigit():
@@ -103,7 +104,7 @@ def insert_newlines_before_subsections(text):
         if ch.isdigit() and i > 0:
             prev = text[i - 1]
             if prev.isspace() or prev == ".":
-                # scannign forward: more digits, then a period, then a digit or uppercase letter.
+                # scannign forward, more digits, then a period, then a digit or uppercase letter.
                 # digit-after-period matches sub-sections like "1.1"; uppercase-after-period
                 # matches single-level headers like "1.Status" while skipping dates and dollar amounts.
 
