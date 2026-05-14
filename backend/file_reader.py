@@ -1,5 +1,5 @@
 """
-Pulls the raw contract text, handles plain text, PDF, and Word
+Extracts the raw contract text, handles plain text, PDF, and Word files.
 """
 
 import io
