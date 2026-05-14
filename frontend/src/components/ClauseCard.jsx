@@ -3,6 +3,7 @@ import Chip from "./Chip";
 import RiskBadge from "./RiskBadge";
 import { getRiskStyle } from "../utils/riskStyles";
 
+// little arrow icon that flips around when the card is open
 function ChevronIcon({ open }) {
   return (
     <svg
@@ -22,8 +23,12 @@ function ChevronIcon({ open }) {
   );
 }
 
+// one collapsible card per clause
 export default function ClauseCard({ clause }) {
+  // tracks whether this card is expanded
   const [open, setOpen] = useState(false);
+
+  // pull the right tailwind classes based on risk level
   const s = getRiskStyle(clause.risk);
 
   return (
@@ -51,12 +56,15 @@ export default function ClauseCard({ clause }) {
         </div>
       </button>
 
+      {/* everything below only renders when the card is open */}
       {open && (
         <div className="border-t border-slate-100 px-5 py-5">
+          {/* raw clause text */}
           <p className="mb-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-600">
             {clause.text}
           </p>
 
+          {/* GPT explanation block, hidden if there's no explanation */}
           {clause.explanation && (
             <div
               className={`mb-4 rounded-lg p-4 text-sm leading-relaxed ${s.explanation}`}
@@ -70,6 +78,7 @@ export default function ClauseCard({ clause }) {
             </div>
           )}
 
+          {/* spaCy entities, shown as chips */}
           {clause.entities?.length > 0 && (
             <div className="mb-3">
               <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -78,14 +87,14 @@ export default function ClauseCard({ clause }) {
               <div className="flex flex-wrap gap-2">
                 {clause.entities.map((e, i) => (
                   <Chip key={i}>
-                    {e.text}{" "}
-                    <span className="text-slate-400">· {e.type}</span>
+                    {e.text} <span className="text-slate-400">· {e.type}</span>
                   </Chip>
                 ))}
               </div>
             </div>
           )}
 
+          {/* YAKE keyphrases, also as chips */}
           {clause.keyphrases?.length > 0 && (
             <div>
               <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">

@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 
 const ACCEPTED_EXTENSIONS = [".txt", ".pdf", ".docx"];
 
+// left panel component: textarea + upload + analyze buttons
 export default function ContractInput({
   loading,
   uploading,
@@ -9,23 +10,27 @@ export default function ContractInput({
   onExtractFile,
   onInvalidFile,
 }) {
+  // current contract text shown in the textarea
   const [text, setText] = useState("");
+  // name of the most recently uploaded file (just for display)
   const [fileName, setFileName] = useState("");
+  // ref so the visible Upload button can click the hidden file input
   const fileInputRef = useRef(null);
 
+  // fires when the user hits Analyze
   function handleAnalyzeText() {
     if (!text.trim() || loading || uploading) return;
     onAnalyzeText(text);
   }
 
+  // fires when the user picks a file from the file dialog
   async function handleFilePicked(e) {
     const file = e.target.files[0];
-    // reset so picking the same file twice still triggers onChange
     e.target.value = "";
     if (!file) return;
 
     const ok = ACCEPTED_EXTENSIONS.some((ext) =>
-      file.name.toLowerCase().endsWith(ext)
+      file.name.toLowerCase().endsWith(ext),
     );
     if (!ok) {
       onInvalidFile("Please upload a .txt, .pdf, or .docx file.");
@@ -63,7 +68,7 @@ export default function ContractInput({
           {fileName && <span className="truncate">Uploaded: {fileName}</span>}
         </div>
 
-        {/* hidden file input — the Upload button clicks it via ref */}
+        {/* hidden file input the Upload button clicks it via ref */}
         <input
           ref={fileInputRef}
           type="file"
