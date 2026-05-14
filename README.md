@@ -13,38 +13,39 @@ The backend splits the contract into clauses and runs three GPT-4o-mini calls pe
 
 ## Backend
 
-Install dependencies:
+Install dependencies
 
-cd backend
+- cd backend
 
-pip install -r requirements.txt
+- pip install -r requirements.txt
 
-Configure environment:
+Configure environment
 
-cp .env.example .env   
+- cp .env.example .env   
 
-then edit .env and set OPENAI_API_KEY
+- then edit .env and set OPENAI_API_KEY
 
 
-Run:
+## Run
 
-uvicorn main:app --reload
+- uvicorn main:app --reload
 
-Backend runs on http://localhost:8000.
+- Backend runs on http://localhost:8000.
 
 ## Frontend
 
-Install dependencies:
+Install dependencies
 
-cd frontend
+- cd frontend
 
-npm install
+- npm install
 
 
-Run:
-npm run dev
+Run
 
-Frontend runs on http://localhost:5173.
+- npm run dev
+
+- Frontend runs on http://localhost:5173.
 
 Start the backend first, then the frontend.
 
