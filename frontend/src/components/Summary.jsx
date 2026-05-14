@@ -3,7 +3,6 @@ import CountCard from "./CountCard";
 export default function Summary({ clauses, onDownload }) {
   const counts = { High: 0, Medium: 0, Low: 0 };
   for (const c of clauses) {
-    // guard against unexpected risk values like "Unknown"
     if (c.risk in counts) counts[c.risk]++;
   }
 
