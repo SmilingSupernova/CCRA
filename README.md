@@ -51,5 +51,5 @@ Start the backend first, then the frontend.
 
 ## Using the demo
 
-Open http://localhost:5173 in the browser. Paste contract text into the textbox or upload a .txt, .pdf, or .docx file to populate it. Click "Analyze contract" to run the pipeline and see the results.
+Open http://localhost:5173 in the browser. Paste contract text into the textbox or upload a .txt, .pdf, or .docx file to populate it. Click Analyze contract to run and see the results.
 
