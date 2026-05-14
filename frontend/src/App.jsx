@@ -5,6 +5,7 @@ import SummaryCard from "./components/SummaryCard";
 import { useContractAnalysis } from "./hooks/useContractAnalysis";
 
 export default function App() {
+  // grab everything we need from the analysis hook
   const {
     results,
     loading,
@@ -15,6 +16,7 @@ export default function App() {
     setUploadError,
   } = useContractAnalysis();
 
+  // turns the results into a JSON file and triggers a browser download
   function downloadJson() {
     if (!results) return;
     const blob = new Blob([JSON.stringify(results, null, 2)], {
@@ -31,8 +33,10 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
       <Header />
+      {/* two-column layout on big screens, stacked on smaller ones */}
       <main className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-6 py-8 lg:grid-cols-2">
         <div className="space-y-6">
+          {/* left side: paste or upload a contract */}
           <ContractInput
             loading={loading}
             uploading={uploading}
@@ -40,11 +44,13 @@ export default function App() {
             onExtractFile={extractTextFromFile}
             onInvalidFile={setUploadError}
           />
+          {/* showing the summary card once analysis is done */}
           {!loading && results?.summary && (
             <SummaryCard summary={results.summary} />
           )}
         </div>
         <section>
+          {/* right side: per-clause results, or a loader/error */}
           <ResultsPanel
             loading={loading}
             error={error}
