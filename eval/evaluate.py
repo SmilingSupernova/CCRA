@@ -1,7 +1,5 @@
 """
-Compare our system to CUAD and a keyword baseline.
-
-run: python evaluate.py
+Compares our system to CUAD
 """
 
 import json
@@ -30,6 +28,7 @@ from huggingface_hub import hf_hub_download
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 
+# the 41 CUAD categories our classifier knows about
 BACKEND_CATEGORIES = [
     "Document Name", "Agreement Date", "Parties", "Governing Law", "Effective Date",
     "Expiration Date", "Renewal Term", "Notice Period to Terminate Renewal",
@@ -75,6 +74,7 @@ CUAD_TO_BACKEND = {
     "Third Party Beneficiary": "Third Party Beneficiary",
 }
 
+# dumb keyword lookup used as a baseline to compare against the LLM
 KEYWORDS = {
     "Document Name": ["agreement", "this contract"],
     "Agreement Date": ["dated as of", "entered into on"],
@@ -119,6 +119,7 @@ KEYWORDS = {
 }
 
 
+# pulls CUAD from Hugging Face and returns (clause_text, category) pairs
 def load_cuad_clauses():
     print("Downloading CUAD dataset...")
     path = hf_hub_download(
@@ -157,6 +158,7 @@ def load_cuad_clauses():
     return clauses
 
 
+# pick N clauses per category so the eval set isn't skewed
 def sample_balanced(clauses, per_category=5, seed=42):
     rng = random.Random(seed)
     by_cat = {}
@@ -175,6 +177,7 @@ def sample_balanced(clauses, per_category=5, seed=42):
     return sample
 
 
+# clean up the LLM output so it matches one of our known categories
 def normalize_category(raw):
     if not raw:
         return None
@@ -187,6 +190,7 @@ def normalize_category(raw):
     return None
 
 
+# runs our GPT classifier on every clause and collects predictions
 def llm_predict_all(clauses):
     preds = []
     print(f"Running LLM on {len(clauses)} clauses...")
@@ -203,6 +207,7 @@ def llm_predict_all(clauses):
     return preds
 
 
+# baseline classifier: pick the category with the most keyword hits
 def keyword_predict(text):
     text_lower = text.lower()
     best_cat = "Governing Law"
@@ -227,6 +232,7 @@ def keyword_predict_all(clauses):
     return out
 
 
+# prints accuracy, precision, recall, F1 (macro and weighted)
 def print_metrics(name, y_true, y_pred):
     acc = accuracy_score(y_true, y_pred)
     p_macro, r_macro, f1_macro, _ = precision_recall_fscore_support(
@@ -238,17 +244,18 @@ def print_metrics(name, y_true, y_pred):
 
     print()
     print("=" * 60)
-    print(f"  {name}")
+    print(f"{name}")
     print("=" * 60)
-    print(f"  Accuracy:              {acc:.3f}")
-    print(f"  Precision (macro):     {p_macro:.3f}")
-    print(f"  Recall    (macro):     {r_macro:.3f}")
-    print(f"  F1        (macro):     {f1_macro:.3f}")
-    print(f"  Precision (weighted):  {p_w:.3f}")
-    print(f"  Recall    (weighted):  {r_w:.3f}")
-    print(f"  F1        (weighted):  {f1_w:.3f}")
+    print(f"Accuracy: {acc:.3f}")
+    print(f"Precision (macro): {p_macro:.3f}")
+    print(f"Recall (macro): {r_macro:.3f}")
+    print(f"F1 (macro): {f1_macro:.3f}")
+    print(f"Precision (weighted): {p_w:.3f}")
+    print(f"Recall (weighted): {r_w:.3f}")
+    print(f"F1 (weighted): {f1_w:.3f}")
 
 
+# shows the most common mistakes
 def print_top_confusions(y_true, y_pred, n=10):
     mistakes = Counter()
     for t, p in zip(y_true, y_pred):
@@ -261,10 +268,11 @@ def print_top_confusions(y_true, y_pred, n=10):
         print(f"    {t}  ->  {p}  ({c})")
 
 
+# sanity check classify the same clause twice and see if we get the same answer
 def consistency_check(clauses, n=10):
     print()
     print("=" * 60)
-    print("  Consistency check (same clause, run twice)")
+    print("Consistency check (same clause, run twice)")
     print("=" * 60)
 
     rng = random.Random(123)
@@ -278,7 +286,7 @@ def consistency_check(clauses, n=10):
             same += 1
 
     pct = same / len(picks)
-    print(f"  Same category both runs: {same}/{len(picks)}  ({pct:.0%})")
+    print(f"Same category both runs: {same}/{len(picks)}  ({pct:.0%})")
 
 
 def main():
