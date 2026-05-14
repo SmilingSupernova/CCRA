@@ -41,7 +41,7 @@ Install dependencies
 - npm install
 
 
-Run
+## Run
 
 - npm run dev
 
