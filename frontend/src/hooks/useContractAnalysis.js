@@ -14,6 +14,7 @@ function normalize(data) {
 export function useContractAnalysis() {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
 
   async function analyzeText(text) {
@@ -36,15 +37,14 @@ export function useContractAnalysis() {
     }
   }
 
-  async function analyzeFile(file) {
-    if (!file || loading) return;
-    setLoading(true);
+  async function extractTextFromFile(file) {
+    if (!file || uploading || loading) return null;
+    setUploading(true);
     setError(null);
-    setResults(null);
     try {
       const form = new FormData();
       form.append("file", file);
-      const res = await fetch(`${API}/analyze-file`, {
+      const res = await fetch(`${API}/extract-text`, {
         method: "POST",
         body: form,
       });
@@ -52,11 +52,13 @@ export function useContractAnalysis() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.detail || `Server error: ${res.status}`);
       }
-      setResults(normalize(await res.json()));
+      const data = await res.json();
+      return data?.contract_text ?? "";
     } catch (err) {
-      setError(err.message || "Could not reach the backend.");
+      setError(err.message || "Could not read the uploaded file.");
+      return null;
     } finally {
-      setLoading(false);
+      setUploading(false);
     }
   }
 
@@ -67,9 +69,10 @@ export function useContractAnalysis() {
   return {
     results,
     loading,
+    uploading,
     error,
     analyzeText,
-    analyzeFile,
+    extractTextFromFile,
     setUploadError,
   };
 }

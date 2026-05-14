@@ -4,8 +4,9 @@ const ACCEPTED_EXTENSIONS = [".txt", ".pdf", ".docx"];
 
 export default function ContractInput({
   loading,
+  uploading,
   onAnalyzeText,
-  onAnalyzeFile,
+  onExtractFile,
   onInvalidFile,
 }) {
   const [text, setText] = useState("");
@@ -13,26 +14,32 @@ export default function ContractInput({
   const fileInputRef = useRef(null);
 
   function handleAnalyzeText() {
-    if (!text.trim() || loading) return;
+    if (!text.trim() || loading || uploading) return;
     onAnalyzeText(text);
   }
 
-  function handleFilePicked(e) {
+  async function handleFilePicked(e) {
     const file = e.target.files[0];
-    if (file) {
-      const ok = ACCEPTED_EXTENSIONS.some((ext) =>
-        file.name.toLowerCase().endsWith(ext)
-      );
-      if (!ok) {
-        onInvalidFile("Please upload a .txt, .pdf, or .docx file.");
-      } else {
-        setFileName(file.name);
-        onAnalyzeFile(file);
-      }
-    }
     // reset so picking the same file twice still triggers onChange
     e.target.value = "";
+    if (!file) return;
+
+    const ok = ACCEPTED_EXTENSIONS.some((ext) =>
+      file.name.toLowerCase().endsWith(ext)
+    );
+    if (!ok) {
+      onInvalidFile("Please upload a .txt, .pdf, or .docx file.");
+      return;
+    }
+
+    const extracted = await onExtractFile(file);
+    if (typeof extracted === "string") {
+      setText(extracted);
+      setFileName(file.name);
+    }
   }
+
+  const busy = loading || uploading;
 
   return (
     <section>
@@ -68,14 +75,14 @@ export default function ContractInput({
         <div className="mt-5 flex gap-3">
           <button
             onClick={() => fileInputRef.current.click()}
-            disabled={loading}
+            disabled={busy}
             className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-slate-400 hover:bg-slate-50 disabled:opacity-60"
           >
-            Upload file
+            {uploading ? "Reading file…" : "Upload file"}
           </button>
           <button
             onClick={handleAnalyzeText}
-            disabled={!text.trim() || loading}
+            disabled={!text.trim() || busy}
             className="flex-1 rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:bg-slate-300"
           >
             {loading ? "Analyzing…" : "Analyze contract"}

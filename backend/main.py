@@ -132,6 +132,24 @@ def analyze_contract(body: ContractRequest):
     return run_analysis(body.contract_text)
 
 
+@app.post("/extract-text")
+async def extract_text_endpoint(file: UploadFile = File(...)):
+    file_bytes = await file.read()
+
+    if not file_bytes:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+    try:
+        contract_text = extract_text(file.filename or "", file_bytes)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        print("Error extracting text from file:", e)
+        raise HTTPException(status_code=400, detail="Could not read the uploaded file.")
+
+    return {"contract_text": contract_text}
+
+
 @app.post("/analyze-file")
 async def analyze_file(file: UploadFile = File(...)):
     file_bytes = await file.read()

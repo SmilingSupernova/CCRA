@@ -8,9 +8,10 @@ export default function App() {
   const {
     results,
     loading,
+    uploading,
     error,
     analyzeText,
-    analyzeFile,
+    extractTextFromFile,
     setUploadError,
   } = useContractAnalysis();
 
@@ -34,8 +35,9 @@ export default function App() {
         <div className="space-y-6">
           <ContractInput
             loading={loading}
+            uploading={uploading}
             onAnalyzeText={analyzeText}
-            onAnalyzeFile={analyzeFile}
+            onExtractFile={extractTextFromFile}
             onInvalidFile={setUploadError}
           />
           {!loading && results?.summary && (
