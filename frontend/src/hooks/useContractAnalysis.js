@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+// backend URL
 const API = "http://localhost:8000";
 
 // normalize the response so the UI always sees { summary, clauses }
@@ -11,13 +12,20 @@ function normalize(data) {
   };
 }
 
+// custom hook that holds all the state and API calls for contract analysis
 export function useContractAnalysis() {
+  // analysis results from the backend
   const [results, setResults] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  // error message to show the user
   const [error, setError] = useState(null);
 
+  // sends pasted text to the backend and stores the results
   async function analyzeText(text) {
+    // ignoring empty input or if an analysis is already running
     if (!text.trim() || loading) return;
     setLoading(true);
     setError(null);
@@ -37,6 +45,7 @@ export function useContractAnalysis() {
     }
   }
 
+  // uploads a .txt/.pdf/.docx and gets the raw text back from the backend
   async function extractTextFromFile(file) {
     if (!file || uploading || loading) return null;
     setUploading(true);
