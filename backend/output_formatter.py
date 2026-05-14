@@ -21,7 +21,7 @@ def format_clause(clause_number, text, category, risk, explanation, entities, ke
     return clause
 
 
-# collects all individual clause dictionaries into one list
+# collects all the individual clause dictionaries into one list
 def format_all_clauses(clauses):
     output = []
 
@@ -31,7 +31,7 @@ def format_all_clauses(clauses):
     return output
 
 
-# bundles the contract-level summary together with the list of clauses
+# bundles the contract summary together with the list of clauses
 def format_final_output(summary, clauses):
     return {
         "summary": summary,
