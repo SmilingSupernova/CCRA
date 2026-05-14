@@ -12,7 +12,7 @@ from preprocessor import line_is_a_numbered_section
 
 nlp = spacy.load("en_core_web_sm")
 
-# spaCy entity labels we keep, mapped to the friendly name we show in the UI
+# spaCy entity labels we keep, mapped to the name shown in the UI
 ENTITY_TYPES = {
     "ORG": "Organization",
     "PERSON": "Person",
@@ -22,12 +22,13 @@ ENTITY_TYPES = {
     "LAW": "Law",
 }
 
-# Words and phrases spaCy keeps mistagging as entities. Compared lowercase, after we strip a leading "the/a/an" and a trailing "'s".
+# Words and phrases spaCy keeps mistagging as entities
 BLOCKLIST = {
     # contract roles
     "licensor", "licensee", "provider", "distributor", "supplier",
     "client", "customer", "vendor", "party", "parties", "territory",
     "contractor", "buyer", "seller", "company", "software", "services",
+
     # common contract phrases
     "agreement", "this agreement", "effective date", "agreement date",
     "expiration date", "renewal term", "term", "initial term",
@@ -35,6 +36,7 @@ BLOCKLIST = {
     "change of control", "source code escrow",
     "exhibit a", "exhibit b", "schedule a", "work order",
     "confidential information",
+
     # generic defined-term jargon
     "licensed software", "licensed territory", "license term", "license",
     "third party", "proprietary information", "intellectual property",
@@ -42,19 +44,19 @@ BLOCKLIST = {
     "specifications", "documentation",
 }
 
-# product-name suffixes that almost always indicate a mislabeled product
+# product name suffixes that indicate a mislabeled product
 PRODUCT_SUFFIXES = {
     "software", "system", "platform", "service", "services",
     "product", "application",
 }
 
-# DATE entities that are really just cadence adjectives
+# Date entities that are just cadence adjectives
 DATE_BLOCKLIST = {
     "annual", "monthly", "weekly", "daily", "quarterly", "yearly",
     "biennial", "semi-annual", "semi-annually",
 }
 
-# address-fragment tokens spaCy often mistags as a Person
+# address fragment tokens spaCy often mistags as a Person
 ADDRESS_WORDS = {
     "suite", "phd", "ph.d", "dr", "drive", "street", "avenue", "blvd",
     "boulevard", "road", "rd", "floor", "fl", "apt", "unit", "ave", "st",
@@ -63,10 +65,9 @@ ADDRESS_PREFIXES = ("suite ", "apt ", "unit ", "floor ", "fl ")
 
 INDUSTRY_SUFFIXES = (" industry", " sector", " market", " marketplace")
 
-# matches "1.2.", "10.5", "2.5.Licensee" — a sub-section number glued to text
 SUBSECTION_PREFIX_RE = re.compile(r"^\d+\.\d+\.?")
 
-# Boilerplate words that YAKE picks up but that aren't useful as keyphrases
+# Boilerplate words
 STOPWORDS = {
     "party", "parties", "agreement", "contract", "shall", "hereby",
     "herein", "thereof", "hereof", "pursuant", "accordance", "terms",
@@ -75,7 +76,7 @@ STOPWORDS = {
 
 yake_extractor = yake.KeywordExtractor(lan="en", n=3, dedupLim=0.7, top=5)
 
-# common written-out numbers that spaCy sometimes flags as entities
+# common written out numbers that spaCy sometimes flags as entities
 NUMBER_WORDS = {
     "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
     "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
@@ -90,12 +91,12 @@ NUMBER_WORDS = {
 XREF_PREFIXES = ("section ", "schedule ", "exhibit ", "article ", "paragraph ")
 
 
-# Walks the contract's preamble and pulls out the parties and defined terms
+# Checks contract's preamble and pulls out the parties and defined terms
 def parse_preamble(contract_text):
     known_parties = set()
     defined_terms = set()
 
-    # find where the first numbered section starts so we only scan the preamble
+    # find where the first numbered section starts so we only preamble is scanndd.
     lines = contract_text.splitlines()
     cutoff_char = None
     running = 0
@@ -110,7 +111,6 @@ def parse_preamble(contract_text):
     else:
         preamble = contract_text[:cutoff_char]
 
-    # find every ("Something") chunk. quotes can be straight or curly.
     quote_pairs = [('("', '")'), ("('", "')"), ('(“', '”)')]
 
     for opener, closer in quote_pairs:
@@ -320,7 +320,6 @@ def extract_keyphrases(clause_text):
         phrase = phrase.strip()
         words = phrase.lower().split()
 
-        # if every word in the phrase is boilerplate then the phrase has no real meaning, so we drops it. but if even one word is useful, keep it
         if all(w in STOPWORDS for w in words):
             continue
         keyphrases.append(phrase)
