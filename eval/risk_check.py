@@ -1,10 +1,5 @@
 """
-Check risk levels by hand.
-
-Asks you about 10 clauses one at a time. Type L, M, or H for each one.
-At the end it shows how often the system agreed with you.
-
-run: python risk_check.py
+Testing risk levels by asking our friends to assess risk on 10 clauses and then comparing with model's output.
 """
 
 import json
@@ -33,6 +28,7 @@ from huggingface_hub import hf_hub_download
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 
+# pulls CUAD clauses
 def get_clauses():
     print("Downloading CUAD dataset...")
     path = hf_hub_download(
@@ -66,6 +62,7 @@ def get_clauses():
     return clauses
 
 
+# prompts the human to rate a clause's risk on the command line
 def ask_for_label(idx, total, clause):
     print()
     print("-" * 60)
@@ -85,13 +82,16 @@ def ask_for_label(idx, total, clause):
 
 
 def main():
+    # how many clauses the user labels in one run
     num_to_label = 10
 
+    # grab clauses and shuffle with a fixed seed so the sample is reproducible
     clauses = get_clauses()
     rng = random.Random(42)
     rng.shuffle(clauses)
     picks = clauses[:num_to_label]
 
+    # parallel lists: human[i] vs system[i]
     human = []
     system = []
 
@@ -113,7 +113,7 @@ def main():
         else:
             system.append("Low")  # fallback if system gave us junk
 
-    # results
+    # compute agreement metrics between human and system
     acc = accuracy_score(human, system)
     p, r, f1, _ = precision_recall_fscore_support(
         human, system, average="macro",
@@ -122,19 +122,20 @@ def main():
 
     print()
     print("=" * 60)
-    print(f"  Risk evaluation  (n = {len(human)})")
+    print(f"Risk evaluation  (n = {len(human)})")
     print("=" * 60)
-    print(f"  Accuracy:           {acc:.3f}")
-    print(f"  Precision (macro):  {p:.3f}")
-    print(f"  Recall    (macro):  {r:.3f}")
-    print(f"  F1        (macro):  {f1:.3f}")
+    print(f"Accuracy: {acc:.3f}")
+    print(f"Precision (macro): {p:.3f}")
+    print(f"Recall (macro): {r:.3f}")
+    print(f"F1 (macro): {f1:.3f}")
     print()
-    print(f"  My labels:      {dict(Counter(human))}")
-    print(f"  System labels:  {dict(Counter(system))}")
+    print(f"My labels: {dict(Counter(human))}")
+    print(f"System labels: {dict(Counter(system))}")
 
+    # print a small 3x3 confusion matrix so we can see where we disagree
     levels = ["Low", "Medium", "High"]
     print()
-    print("  Confusion matrix (rows = me, cols = system):")
+    print("Confusion matrix (rows = me, cols = system):")
     print("              " + "  ".join(f"{l:>8}" for l in levels))
     for tl in levels:
         cells = []
