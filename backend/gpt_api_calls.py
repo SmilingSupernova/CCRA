@@ -10,8 +10,9 @@ openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 # sends the clause to GPT and returns a CUAD category
 def classify_clause(clause_text):
-    system_message = """You are an expert legal analyst who reviews commercial contracts. Classify a single contract clause into one of the CUAD categories listed below.
-
+    system_message =
+    """
+    You are an expert legal analyst who reviews commercial contracts. Classify a single contract clause into one of the CUAD categories listed below.
 Read the clause carefully and decide which category best describes what the clause is doing. Focus on the clause's primary purpose, not on incidental words it may contain.
 
 Respond with ONLY the category name, exactly as written in this list, and nothing else:
@@ -150,8 +151,8 @@ def explain_clause(clause_text, category, risk):
     system_message = """You are an expert legal analyst who explains contract clauses to non-lawyers. Your job is to write a short, plain-English explanation of a single clause.
 
 Follow this structure exactly:
-- Sentence 1: What the clause does in practical terms.
-- Sentence 2: Which party it favors or burdens, and why it received the given risk level.
+Sentence 1: What the clause does in practical terms.
+Sentence 2: Which party it favors or burdens, and why it received the given risk level.
 
 Keep the explanation between 45 and 60 words total.
 
